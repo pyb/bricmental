@@ -10,21 +10,21 @@ const paddleColor = 0xdddddd;
 const backgroundColor = 0x000000;
 const wallColor = 0x888888;
 const wallWidth = 20;
-const ballRadius = 10;
+const ballRadius = 13;
 const ballColor = 0x886644;
 
 const inPaddleX = 400;
-const inPaddleY = 400;
+const inPaddleY = 630;
 const inBallX = 100;
 const inBallY = 200;
 const inBallVX = 500;
-const inBallVY = 300;
+const inBallVY = 250;
 
-const paddleAccel = 2200;
-const paddleDrag = 0.00007;
-const maxBallVx = 1000;
+const paddleAccel = 4000;
+const paddleDrag = 0.0002;
+const maxBallVx = 700;
 const maxPaddleVx = 2000;
-const paddleBounce = 0.42;
+const paddleBounce = 0.34;
 
 const collidePaddleBall = (paddle:any, ball:any) => {
     if (Math.abs(ball.y - paddle.y) > (ballRadius + paddleHeight/2) - 1) {
