@@ -230,4 +230,4 @@ The Phaser logo and characters are &copy; 2011 - 2024 Phaser Studio Inc.
 
 All rights reserved.
 
-Bricmental Gameis  &copy; 2025 Pierre-Yves Baccou.
+Bricmental game is &copy; 2025 Pierre-Yves Baccou.

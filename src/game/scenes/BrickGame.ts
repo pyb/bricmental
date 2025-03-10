@@ -10,6 +10,8 @@ const paddleColor = 0xdddddd;
 const backgroundColor = 0x000000;
 const wallColor = 0x888888;
 const wallWidth = 20;
+const ballRadius = 10;
+const ballColor = 0x886644;
 
 export class BrickGame extends Scene
 {
@@ -54,8 +56,18 @@ export class BrickGame extends Scene
         if (!paddleTex)
             throw new Error("texture creation error");
         paddleTex.fill(paddleColor);
-      
+        
+
+        const ballTex = this.textures.addDynamicTexture('ball', ballRadius*2, ballRadius*2);
+        if (!ballTex)
+            throw new Error("texture creation error");
+        const ballGraphics = this.make.graphics({}, false);
+        ballGraphics.fillStyle(ballColor, 1); // alpha == 1
+        ballGraphics.fillCircle(ballRadius, ballRadius, ballRadius);
+        ballTex.draw(ballGraphics);
+
         const paddle = this.physics.add.sprite(400, 400, 'paddle');
+        const ball = this.physics.add.sprite(600, 600, 'ball');
 
         EventBus.emit('current-scene-ready', this);
     }
