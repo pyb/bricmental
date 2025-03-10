@@ -20,6 +20,12 @@ const inBallY = 200;
 const inBallVX = 500;
 const inBallVY = 300;
 
+const paddleAccel = 2200;
+const paddleDrag = 0.00007;
+const maxBallVx = 1000;
+const maxPaddleVx = 2000;
+const paddleBounce = 0.42;
+
 const collidePaddleBall = (paddle:any, ball:any) => {
     if (Math.abs(ball.y - paddle.y) > (ballRadius + paddleHeight/2) - 1) {
         // top or bottom collision
@@ -30,8 +36,23 @@ const collidePaddleBall = (paddle:any, ball:any) => {
     }
     else {
         //side collision
-        const vx = ball.body.velocity.x;
-        ball.setVelocityX(-vx);
+        const ballVx = ball.body.velocity.x;
+        const paddleVx = paddle.body.velocity.x;
+        if (Math.sign(ballVx) == Math.sign(paddleVx))
+        {
+            let vx = ballVx + paddleVx;
+            vx = Math.min(vx, maxBallVx);
+            vx = Math.max(vx, -maxBallVx);
+            ball.setVelocityX(vx);
+        }
+        else
+        {
+            let vx = -ballVx + paddleVx;
+            vx = Math.min(vx, maxBallVx);
+            vx = Math.max(vx, -maxBallVx);
+            ball.setVelocityX(vx);
+        }
+            
     } 
 };
 
@@ -103,9 +124,13 @@ export class BrickGame extends Scene
         this.ball.setVelocityY(inBallVY);
 
         //paddle.setPushable(false);
-        this.paddle.setBounce(0.1);
+        this.paddle.setBounce(paddleBounce);
         this.paddle.setCollideWorldBounds(true);
-        this.paddle.setDragX(.3);
+        
+        this.paddle.body.setMaxSpeed(maxPaddleVx);
+        this.paddle.body.setAllowDrag(true);
+        this.paddle.body.setDamping(true);
+        this.paddle.body.setDrag(paddleDrag, 0);
 
         this.cursors = this.input.keyboard?.createCursorKeys() as Phaser.Types.Input.Keyboard.CursorKeys;
 
@@ -119,15 +144,18 @@ export class BrickGame extends Scene
 
         if (this.cursors.left.isDown)
             {
-                this.paddle.setVelocityX(-400);
+                //this.paddle.setVelocityX(-400);
+                this.paddle.setAccelerationX(-paddleAccel);
             }
             else if (this.cursors.right.isDown)
             {
-                this.paddle.setVelocityX(400);
+                //this.paddle.setVelocityX(400);
+                this.paddle.setAccelerationX(paddleAccel);
             }
             else
             {
-                this.paddle.setVelocityX(0);
+                //this.paddle.setVelocityX(0);
+                this.paddle.setAccelerationX(0);
             }
     }
     changeScene ()
