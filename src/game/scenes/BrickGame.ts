@@ -15,16 +15,34 @@ const ballColor = 0x886644;
 
 const inPaddleX = 400;
 const inPaddleY = 400;
-const inBallX = 600;
-const inBallY = 600;
+const inBallX = 100;
+const inBallY = 200;
 const inBallVX = 500;
 const inBallVY = 300;
+
+const collidePaddleBall = (paddle:any, ball:any) => {
+    if (Math.abs(ball.y - paddle.y) > (ballRadius + paddleHeight/2) - 1) {
+        // top or bottom collision
+        const vy = ball.body.velocity.y;
+        ball.setVelocityY(-vy);
+        //ball.setVelocityX(0);
+        //ball.setVelocityY(0);
+    }
+    else {
+        //side collision
+        const vx = ball.body.velocity.x;
+        ball.setVelocityX(-vx);
+    } 
+};
 
 export class BrickGame extends Scene
 {
     camera: Phaser.Cameras.Scene2D.Camera;
     background: Phaser.GameObjects.Image;
     gameText: Phaser.GameObjects.Text;
+    cursors: Phaser.Types.Input.Keyboard.CursorKeys;
+    ball: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
+    paddle: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
 
     constructor ()
     {
@@ -73,16 +91,45 @@ export class BrickGame extends Scene
         ballGraphics.fillCircle(ballRadius, ballRadius, ballRadius);
         ballTex.draw(ballGraphics);
 
-        const paddle = this.physics.add.sprite(inPaddleX, inPaddleY, 'paddle');
-        const ball = this.physics.add.sprite(inBallX, inBallY, 'ball');
-        ball.setCollideWorldBounds(true);
-        ball.setBounce(1);
-        ball.setVelocityX(inBallVX);
-        ball.setVelocityY(inBallVY);
+        this.paddle = this.physics.add.sprite(inPaddleX, inPaddleY, 'paddle');
+        this.ball = this.physics.add.sprite(inBallX, inBallY, 'ball');
+        this.ball.setCollideWorldBounds(true);
+        this.ball.setBounce(1);
+        this.ball.setCircle(ballRadius, 0, 0);
+
+        this.physics.add.overlap(this.paddle, this.ball, collidePaddleBall);
+
+        this.ball.setVelocityX(inBallVX);
+        this.ball.setVelocityY(inBallVY);
+
+        //paddle.setPushable(false);
+        this.paddle.setBounce(0.1);
+        this.paddle.setCollideWorldBounds(true);
+        this.paddle.setDragX(.3);
+
+        this.cursors = this.input.keyboard?.createCursorKeys() as Phaser.Types.Input.Keyboard.CursorKeys;
 
         EventBus.emit('current-scene-ready', this);
     }
 
+    update ()
+    {
+        // tmp
+        this.cursors = this.input.keyboard?.createCursorKeys() as Phaser.Types.Input.Keyboard.CursorKeys;
+
+        if (this.cursors.left.isDown)
+            {
+                this.paddle.setVelocityX(-400);
+            }
+            else if (this.cursors.right.isDown)
+            {
+                this.paddle.setVelocityX(400);
+            }
+            else
+            {
+                this.paddle.setVelocityX(0);
+            }
+    }
     changeScene ()
     {
         this.scene.start('MainMenu');
