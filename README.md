@@ -14,7 +14,6 @@ This template has been updated for:
 - [Next.js 14.2.3](https://github.com/vercel/next.js)
 - [TypeScript 5](https://github.com/microsoft/TypeScript)
 
-![screenshot](screenshot.png)
 
 ## Requirements
 
@@ -230,3 +229,5 @@ Created by [Phaser Studio](mailto:support@phaser.io). Powered by coffee, anime, 
 The Phaser logo and characters are &copy; 2011 - 2024 Phaser Studio Inc.
 
 All rights reserved.
+
+Bricmental Gameis  &copy; 2025 Pierre-Yves Baccou.
