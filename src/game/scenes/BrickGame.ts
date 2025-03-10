@@ -17,12 +17,12 @@ const inPaddleX = 400;
 const inPaddleY = 630;
 const inBallX = 100;
 const inBallY = 200;
-const inBallVX = 500;
-const inBallVY = 250;
+const inBallVX = 600;
+const inBallVY = 470;
 
 const paddleAccel = 4000;
 const paddleDrag = 0.0002;
-const maxBallVx = 700;
+const maxBallVx = 750;
 const maxPaddleVx = 2000;
 const paddleBounce = 0.34;
 
