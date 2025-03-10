@@ -31,8 +31,13 @@ const collidePaddleBall = (paddle:any, ball:any) => {
         // top or bottom collision
         const vy = ball.body.velocity.y;
         ball.setVelocityY(-vy);
-        //ball.setVelocityX(0);
-        //ball.setVelocityY(0);
+        if (ball.x > paddle.x + ballRadius)
+            ball.setVelocityX(Math.abs(ball.body.velocity.x));
+        else if (ball.x < paddle.x - ballRadius)
+            ball.setVelocityX(-Math.abs(ball.body.velocity.x));
+        else {
+            // near the middle of the paddle. no velocity change
+        }
     }
     else {
         //side collision
