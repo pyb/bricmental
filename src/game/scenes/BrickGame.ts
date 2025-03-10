@@ -13,6 +13,13 @@ const wallWidth = 20;
 const ballRadius = 10;
 const ballColor = 0x886644;
 
+const inPaddleX = 400;
+const inPaddleY = 400;
+const inBallX = 600;
+const inBallY = 600;
+const inBallVX = 500;
+const inBallVY = 300;
+
 export class BrickGame extends Scene
 {
     camera: Phaser.Cameras.Scene2D.Camera;
@@ -45,7 +52,7 @@ export class BrickGame extends Scene
         let wall:Phaser.GameObjects.Image;
         wall = this.make.image({x:0, y:0, key:'wallH', origin: {x:0,y:0}});
         walls.add(wall);
-        wall = this.make.image({x:0, y: (gameHeight - 2 * wallWidth), key:'wallH', origin: {x:0,y:0}});
+        wall = this.make.image({x:0, y: (gameHeight - 1 * wallWidth), key:'wallH', origin: {x:0,y:0}});
         walls.add(wall);
         wall = this.make.image({x:0, y: wallWidth, key:'wallV', origin: {x:0,y:0}});
         walls.add(wall);
@@ -66,8 +73,12 @@ export class BrickGame extends Scene
         ballGraphics.fillCircle(ballRadius, ballRadius, ballRadius);
         ballTex.draw(ballGraphics);
 
-        const paddle = this.physics.add.sprite(400, 400, 'paddle');
-        const ball = this.physics.add.sprite(600, 600, 'ball');
+        const paddle = this.physics.add.sprite(inPaddleX, inPaddleY, 'paddle');
+        const ball = this.physics.add.sprite(inBallX, inBallY, 'ball');
+        ball.setCollideWorldBounds(true);
+        ball.setBounce(1);
+        ball.setVelocityX(inBallVX);
+        ball.setVelocityY(inBallVY);
 
         EventBus.emit('current-scene-ready', this);
     }
