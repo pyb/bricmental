@@ -60,7 +60,7 @@ enum Zone {
 const collidePaddleBall = (paddle:any, ball:any) => {
     if (Math.abs(ball.y - paddle.y) > (ballRadius + paddleHeight/2) - 1) {
     // top or bottom collision
-        const fraction = ((ball.body.x - paddle.body.x) / paddleWidth);
+        const fraction = ((ball.body.x - paddle.body.x - paddleWidth/2) / paddleWidth);
         let paddleZone:number;
         if (fraction > .5)
             paddleZone = Zone.LongRight;
@@ -85,21 +85,19 @@ const collidePaddleBall = (paddle:any, ball:any) => {
         
         switch (paddleZone) {
             case Zone.LongRight:
-                console.log(vAngle)
                 if (vAngle > 3.14/2)
                 {
                     vAngle = (3.14 - vAngle);
                     vAngle /= 1.4;
                 }
-                    
                 break;
             case Zone.LongLeft:
                 if (vAngle < 3.14/2)
                 {
+                    
                     vAngle /= 1.4;
                     vAngle = (3.14 - vAngle);
                 }
-                    
                 break;
             case Zone.ShortRight:
             case Zone.ShortLeft:
@@ -264,11 +262,17 @@ export class BrickGame extends Scene
 
     update ()
     {
-        //console.log(this.game.loop.actualFps)
-        
         let vx = this.ball.body.velocity.x;
         let vy = this.ball.body.velocity.y;
         const v = Math.sqrt (vx*vx + vy*vy)
+
+        if ( (v < 1) &&
+              (gameHeight - this.ball.y) < 100)  
+        {
+            // stuck?
+            this.initBall();
+            return;
+        }
         if (v > maxBallV)
         {
             const vAngle = Math.atan2(vy, vx);
@@ -291,7 +295,6 @@ export class BrickGame extends Scene
               });
         }
            
-
         if (this.cursors.left.isDown)
             {
                 //this.paddle.setVelocityX(-400);
@@ -308,6 +311,7 @@ export class BrickGame extends Scene
                 this.paddle.setAccelerationX(0);
             }
     }
+
     changeScene ()
     {
         this.scene.start('MainMenu');
