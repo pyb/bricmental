@@ -48,8 +48,27 @@ const collideBumperBall = (bumer:any, ball:any) => {
     ball.setVelocityY(vy * bumperBoost);
 }
 
+enum Zone {
+    LongLeft,
+    ShortLeft,
+    ShortRight,
+    LongRight,
+}
+
 const collidePaddleBall = (paddle:any, ball:any) => {
     if (Math.abs(ball.y - paddle.y) > (ballRadius + paddleHeight/2) - 1) {
+
+        const fraction = ((ball.body.x - paddle.body.x) / paddleWidth);
+        let paddleZone:number;
+        if (fraction > .5)
+            paddleZone = Zone.LongRight;
+        else if (fraction < -.5)
+            paddleZone = Zone.LongLeft;
+        else if (fraction > 0)
+            paddleZone = Zone.ShortRight;
+        else
+            paddleZone = Zone.ShortLeft;
+
         let vx = ball.body.velocity.x;
         let vy = ball.body.velocity.y;
 
@@ -59,11 +78,39 @@ const collidePaddleBall = (paddle:any, ball:any) => {
         else
             ball.y = paddle.y - (ballRadius + paddleHeight/2) - 1;
         
-        
         vy = -vy;
         const vIn = Math.sqrt(vx*vx + vy*vy);
         let vAngle = Math.atan2(vy, vx);
-        vAngle += Math.random()/paddleRandomAngleFactor;
+        
+        switch (paddleZone) {
+            case Zone.LongRight:
+                console.log("LR")
+                if (vAngle > 3.14/2)
+                    vAngle = (3.14 - vAngle)
+                else
+                    vAngle -= (3.14/3);
+                break;
+            case Zone.LongLeft:
+                console.log("LL")
+                if (vAngle < 3.14/2)
+                    vAngle = (3.14 - vAngle)
+                else
+                    vAngle += (3.14/3);
+                break;
+            case Zone.ShortRight:
+            case Zone.ShortLeft:
+                console.log("short")
+                if (vAngle > 3.14/2)
+                    vAngle -= (vAngle-3.14/2) / 4;
+                else
+                    vAngle += (3.14/2 - vAngle) / 4;
+                break;
+            default:
+            
+            vAngle = Math.max(vAngle, 0);
+            vAngle = Math.min(vAngle, 3.14);
+        }
+
         if (vIn < vMin)
         {
             // minimum viable boost
@@ -77,19 +124,22 @@ const collidePaddleBall = (paddle:any, ball:any) => {
         }
 
         ball.setVelocityY(vy);
-
-        if (ball.x > paddle.x + ballRadius)
-        {
-            ball.setVelocityX(Math.abs(vx));
+        ball.setVelocityX(vx);
+        /*
+        switch (paddleZone) {
+            case Zone.LongRight:
+                ball.setVelocityX(Math.abs(vx));
+                break;
+            case Zone.LongLeft:
+                ball.setVelocityX(-Math.abs(vx));
+                break;
+            case Zone.ShortLeft:
+            case Zone.ShortRight:
+                ball.setVelocityX(vx);
+                break;
+            default:
         }
-        else if (ball.x < paddle.x - ballRadius)
-        {
-            ball.setVelocityX(-Math.abs(vx));
-        }
-        else {
-            // near the middle of the paddle. no velocity change
-            ball.setVelocityX(vx);
-        }
+        */
     }
     else {
         //side collision
