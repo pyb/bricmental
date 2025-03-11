@@ -28,7 +28,6 @@ const paddleBounce = 0.34;
 
 const collidePaddleBall = (paddle:any, ball:any) => {
     if (Math.abs(ball.y - paddle.y) > (ballRadius + paddleHeight/2) - 1) {
-        console.log("top")
         // top or bottom collision
         if (ball.y > paddle.y)
             ball.y = paddle.y + (ballRadius + paddleHeight/2) + 1;
@@ -46,7 +45,6 @@ const collidePaddleBall = (paddle:any, ball:any) => {
     }
     else {
         //side collision
-        console.log("side")
         const ballVx = ball.body.velocity.x;
         const paddleVx = paddle.body.velocity.x;
         if (Math.sign(ballVx) == Math.sign(paddleVx))
@@ -150,6 +148,7 @@ export class BrickGame extends Scene
 
     update ()
     {
+        //console.log(this.game.loop.actualFps)
         // tmp
         this.cursors = this.input.keyboard?.createCursorKeys() as Phaser.Types.Input.Keyboard.CursorKeys;
 
