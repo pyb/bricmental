@@ -18,19 +18,21 @@ const inPaddleX = 400;
 const inPaddleY = 630;
 const inBallX = 100;
 const inBallY = 200;
-const inBallVX = 600;
-const inBallVY = 470;
+const inBallVX = 700;
+const inBallVY = 530;
 
 const paddleAccel = 4000;
 const paddleDrag = 0.0002;
 const maxBallVx = 750;
 const maxPaddleVx = 2000;
 const paddleBounce = 0.34;
-const ballDrag = 0.94;
+const ballDrag = 0.96;
 const paddleBoost = 300;
 const paddleRandomAngleFactor = 8;
 
-const vMin = 1000;
+const vMin = 600;
+const holeWidth = 200;
+const dropDelay = 1500; // in ms
 
 const collidePaddleBall = (paddle:any, ball:any) => {
     if (Math.abs(ball.y - paddle.y) > (ballRadius + paddleHeight/2) - 1) {
@@ -105,10 +107,20 @@ export class BrickGame extends Scene
     cursors: Phaser.Types.Input.Keyboard.CursorKeys;
     ball: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
     paddle: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
+    dropTimer:Phaser.Time.TimerEvent | null;
 
     constructor ()
     {
         super('BrickGame');
+    }
+
+    initBall ()
+    {
+        this.dropTimer = null;
+        this.ball.setVelocityX(inBallVX);
+        this.ball.setVelocityY(inBallVY);
+        this.ball.setX(inBallX);
+        this.ball.setY(inBallY);
     }
 
     create ()
@@ -123,6 +135,11 @@ export class BrickGame extends Scene
             throw new Error("texture creation error");
         wallHTex.fill(wallColor);
 
+        const wallH2Tex = this.textures.addDynamicTexture('wallH2', (gameWidth - holeWidth) / 2, wallWidth);
+        if (!wallH2Tex)
+            throw new Error("texture creation error");
+        wallH2Tex.fill(wallColor);
+
         const wallVTex = this.textures.addDynamicTexture('wallV', wallWidth, gameHeight - 2*wallWidth);
         if (!wallVTex)
             throw new Error("texture creation error");
@@ -132,8 +149,14 @@ export class BrickGame extends Scene
         let wall:Phaser.GameObjects.Image;
         wall = this.make.image({x:0, y:0, key:'wallH', origin: {x:0,y:0}});
         walls.add(wall);
-        wall = this.make.image({x:0, y: (gameHeight - 1 * wallWidth), key:'wallH', origin: {x:0,y:0}});
+        //wall = this.make.image({x:0, y: (gameHeight - 1 * wallWidth), key:'wallH', origin: {x:0,y:0}});
+        //walls.add(wall);
+        wall = this.make.image({x:0, y: (gameHeight - 1 * wallWidth), key:'wallH2', origin: {x:0,y:0}});
         walls.add(wall);
+
+        wall = this.make.image({x:(gameWidth + holeWidth) / 2, y: (gameHeight - 1 * wallWidth), key:'wallH2', origin: {x:0,y:0}});
+        walls.add(wall);
+
         wall = this.make.image({x:0, y: wallWidth, key:'wallV', origin: {x:0,y:0}});
         walls.add(wall);
         wall = this.make.image({x:(gameWidth - wallWidth), y:wallWidth, key:'wallV', origin: {x:0,y:0}});
@@ -155,20 +178,19 @@ export class BrickGame extends Scene
 
         this.paddle = this.physics.add.sprite(inPaddleX, inPaddleY, 'paddle');
         this.ball = this.physics.add.sprite(inBallX, inBallY, 'ball');
-        this.ball.setCollideWorldBounds(true);
+        //this.ball.setCollideWorldBounds(true);
         this.ball.setBounce(1);
         this.ball.setCircle(ballRadius, 0, 0);
 
         this.physics.add.overlap(this.paddle, this.ball, collidePaddleBall);
 
-        this.ball.setVelocityX(inBallVX);
-        this.ball.setVelocityY(inBallVY);
-        
         this.ball.body.setAllowDrag(true);
         this.ball.body.setDamping(true);
         this.ball.body.setDrag(ballDrag, ballDrag);
         if (ballGravity)
             this.ball.body.setGravityY(ballGravity);
+
+        this.physics.add.collider(this.ball, walls);
 
         this.paddle.setBounce(paddleBounce);
         this.paddle.setCollideWorldBounds(true);
@@ -180,14 +202,25 @@ export class BrickGame extends Scene
 
         this.cursors = this.input.keyboard?.createCursorKeys() as Phaser.Types.Input.Keyboard.CursorKeys;
 
+        this.initBall();
+
         EventBus.emit('current-scene-ready', this);
     }
 
     update ()
     {
         //console.log(this.game.loop.actualFps)
-        // tmp
-        this.cursors = this.input.keyboard?.createCursorKeys() as Phaser.Types.Input.Keyboard.CursorKeys;
+        
+        if (!this.dropTimer &&
+            (this.ball.y > gameHeight))
+        {
+            this.dropTimer = this.time.addEvent({
+                delay: dropDelay, // ms
+                callback: () => this.initBall(),
+                loop: false,
+              });
+        }
+           
 
         if (this.cursors.left.isDown)
             {
