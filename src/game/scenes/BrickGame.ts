@@ -9,13 +9,13 @@ const paddleHeight = 30;
 const paddleColor = 0xdddddd;
 const backgroundColor = 0x000000;
 const wallColor = 0x888888;
-const wallWidth = 20;
+const wallWidth = 30;
 const ballRadius = 13;
 const ballColor = 0x886644;
 const ballGravity = 70;
 
 const inPaddleX = 400;
-const inPaddleY = 630;
+const inPaddleY = 680;
 const inBallX = 100;
 const inBallY = 200;
 const inBallVX = 700;
@@ -26,13 +26,27 @@ const paddleDrag = 0.0002;
 const maxBallVx = 750;
 const maxPaddleVx = 2000;
 const paddleBounce = 0.34;
-const ballDrag = 0.96;
-const paddleBoost = 300;
+const ballDrag = 0.90;
+const paddleBoost = 520;
 const paddleRandomAngleFactor = 8;
+const maxBallV = 2000;
+
+const bumperRadius = 40;
+const bumperColor = 0x884a94;
+const bumperX = 700;
+const bumperY = 200;
+const bumperBoost = 1.7;
 
 const vMin = 600;
-const holeWidth = 200;
+const holeWidth = 190;
 const dropDelay = 1500; // in ms
+
+const collideBumperBall = (bumer:any, ball:any) => {
+    const vx = ball.body.velocity.x;
+    const vy = ball.body.velocity.y;
+    ball.setVelocityX(vx * bumperBoost);
+    ball.setVelocityY(vy * bumperBoost);
+}
 
 const collidePaddleBall = (paddle:any, ball:any) => {
     if (Math.abs(ball.y - paddle.y) > (ballRadius + paddleHeight/2) - 1) {
@@ -108,6 +122,7 @@ export class BrickGame extends Scene
     ball: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
     paddle: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
     dropTimer:Phaser.Time.TimerEvent | null;
+    bumper: Phaser.Types.Physics.Arcade.SpriteWithStaticBody;
 
     constructor ()
     {
@@ -167,6 +182,13 @@ export class BrickGame extends Scene
             throw new Error("texture creation error");
         paddleTex.fill(paddleColor);
         
+        const bumperTex = this.textures.addDynamicTexture('bumper', bumperRadius*2, bumperRadius*2);
+        if (!bumperTex)
+            throw new Error("texture creation error");
+        const bumperGraphics = this.make.graphics({}, false);
+        bumperGraphics.fillStyle(bumperColor, 1); // alpha == 1
+        bumperGraphics.fillCircle(bumperRadius, bumperRadius, bumperRadius);
+        bumperTex.draw(bumperGraphics);
 
         const ballTex = this.textures.addDynamicTexture('ball', ballRadius*2, ballRadius*2);
         if (!ballTex)
@@ -202,6 +224,10 @@ export class BrickGame extends Scene
 
         this.cursors = this.input.keyboard?.createCursorKeys() as Phaser.Types.Input.Keyboard.CursorKeys;
 
+        this.bumper = this.physics.add.staticSprite(bumperX, bumperY, 'bumper');
+        this.bumper.setCircle(bumperRadius, 0, 0);
+        this.physics.add.collider(this.bumper, this.ball, collideBumperBall);
+
         this.initBall();
 
         EventBus.emit('current-scene-ready', this);
@@ -211,8 +237,23 @@ export class BrickGame extends Scene
     {
         //console.log(this.game.loop.actualFps)
         
+        let vx = this.ball.body.velocity.x;
+        let vy = this.ball.body.velocity.y;
+        const v = Math.sqrt (vx*vx + vy*vy)
+        if (v > maxBallV)
+        {
+            const vAngle = Math.atan2(vy, vx);
+            vx = 0.7 * maxBallV * Math.cos(vAngle);
+            vy = 0.7 * maxBallV * Math.sin(vAngle);
+            this.ball.setVelocityX(vx);
+            this.ball.setVelocityY(vy);
+        }
+
         if (!this.dropTimer &&
-            (this.ball.y > gameHeight))
+            (   (this.ball.y > gameHeight+50) ||
+                (this.ball.x > gameWidth+50) ||
+                (this.ball.x < -20) ||
+                (this.ball.y < -20) ) )
         {
             this.dropTimer = this.time.addEvent({
                 delay: dropDelay, // ms
