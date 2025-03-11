@@ -36,7 +36,9 @@ const paddleVMin = 300;
 
 const bumperRadius = 18;
 const bumperColor = 0x884a94;
-const bumperX = 150;
+const bumper1X = 150;
+const bumper2X = gameWidth/2;
+const bumper3X = gameWidth - bumper1X;
 const bumperY = 350;
 const bumperBoost = 2.6;
 
@@ -155,7 +157,8 @@ export class BrickGame extends Scene
     dropTimer:Phaser.Time.TimerEvent | null;
     bumper1: Phaser.Types.Physics.Arcade.SpriteWithStaticBody;
     bumper2: Phaser.Types.Physics.Arcade.SpriteWithStaticBody;
-
+    bumper3: Phaser.Types.Physics.Arcade.SpriteWithStaticBody;
+    
     constructor ()
     {
         super('BrickGame');
@@ -257,12 +260,15 @@ export class BrickGame extends Scene
         this.cursors = this.input.keyboard?.createCursorKeys() as Phaser.Types.Input.Keyboard.CursorKeys;
 
         const bumpers = this.physics.add.staticGroup();
-        this.bumper1 = this.physics.add.staticSprite(bumperX, bumperY, 'bumper');
+        this.bumper1 = this.physics.add.staticSprite(bumper1X, bumperY, 'bumper');
         bumpers.add(this.bumper1);
-        this.bumper2 = this.physics.add.staticSprite(gameWidth - bumperX, bumperY, 'bumper');
+        this.bumper2 = this.physics.add.staticSprite(bumper2X, bumperY, 'bumper');
         bumpers.add(this.bumper2);
+        this.bumper3 = this.physics.add.staticSprite(bumper3X, bumperY, 'bumper');
+        bumpers.add(this.bumper3);
         this.bumper1.setCircle(bumperRadius, 0, 0);
         this.bumper2.setCircle(bumperRadius, 0, 0);
+        this.bumper3.setCircle(bumperRadius, 0, 0);
         this.physics.add.collider(this.ball, bumpers, collideBumperBall);
 
         this.initBall();
