@@ -62,9 +62,9 @@ const collidePaddleBall = (paddle:any, ball:any) => {
     // top or bottom collision
         const fraction = ((ball.body.x - paddle.body.x - paddleWidth/2) / paddleWidth);
         let paddleZone:number;
-        if (fraction > .5)
+        if (fraction > .4)
             paddleZone = Zone.LongRight;
-        else if (fraction < -.5)
+        else if (fraction < -.4)
             paddleZone = Zone.LongLeft;
         else if (fraction > 0)
             paddleZone = Zone.ShortRight;
@@ -90,13 +90,17 @@ const collidePaddleBall = (paddle:any, ball:any) => {
                     vAngle = (3.14 - vAngle);
                     vAngle /= 1.4;
                 }
+                vAngle /= 1.4;
                 break;
             case Zone.LongLeft:
                 if (vAngle < 3.14/2)
                 {
-                    
                     vAngle /= 1.4;
                     vAngle = (3.14 - vAngle);
+                }
+                else
+                {
+                    vAngle += (3.14-vAngle)/4;
                 }
                 break;
             case Zone.ShortRight:
