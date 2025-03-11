@@ -12,6 +12,7 @@ const wallColor = 0x888888;
 const wallWidth = 20;
 const ballRadius = 13;
 const ballColor = 0x886644;
+const ballGravity = 200;
 
 const inPaddleX = 400;
 const inPaddleY = 630;
@@ -25,22 +26,41 @@ const paddleDrag = 0.0002;
 const maxBallVx = 750;
 const maxPaddleVx = 2000;
 const paddleBounce = 0.34;
+const ballDrag = 0.76;
+const paddleBoost = 20;
+
+const paddleRotation:number = 10.0/360;
 
 const collidePaddleBall = (paddle:any, ball:any) => {
     if (Math.abs(ball.y - paddle.y) > (ballRadius + paddleHeight/2) - 1) {
+        let vx = ball.body.velocity.x;
+        let vy = ball.body.velocity.y;
+
         // top or bottom collision
         if (ball.y > paddle.y)
             ball.y = paddle.y + (ballRadius + paddleHeight/2) + 1;
         else
             ball.y = paddle.y - (ballRadius + paddleHeight/2) - 1;
-        const vy = ball.body.velocity.y;
-        ball.setVelocityY(-vy);
+        
+        
+        vy = -vy;
+        const vAngle = Math.atan2(vy, vx);
+        vx += paddleBoost * Math.cos(vAngle);
+        vy += paddleBoost * Math.sin(vAngle);
+
+        ball.setVelocityY(vy);
+
         if (ball.x > paddle.x + ballRadius)
-            ball.setVelocityX(Math.abs(ball.body.velocity.x));
+        {
+            ball.setVelocityX(Math.abs(vx));
+        }
         else if (ball.x < paddle.x - ballRadius)
-            ball.setVelocityX(-Math.abs(ball.body.velocity.x));
+        {
+            ball.setVelocityX(-Math.abs(vx));
+        }
         else {
             // near the middle of the paddle. no velocity change
+            ball.setVelocityX(vx);
         }
     }
     else {
@@ -131,8 +151,13 @@ export class BrickGame extends Scene
 
         this.ball.setVelocityX(inBallVX);
         this.ball.setVelocityY(inBallVY);
+        
+        this.ball.body.setAllowDrag(true);
+        this.ball.body.setDamping(true);
+        this.ball.body.setDrag(ballDrag, ballDrag);
+        if (ballGravity)
+            this.ball.body.setGravityY(ballGravity);
 
-        //paddle.setPushable(false);
         this.paddle.setBounce(paddleBounce);
         this.paddle.setCollideWorldBounds(true);
         
