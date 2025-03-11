@@ -79,7 +79,7 @@ const collidePaddleBall = (paddle:any, ball:any) => {
             ball.y = paddle.y - (ballRadius + paddleHeight/2) - 1;
         
         vy = -vy;
-        const vIn = Math.sqrt(vx*vx + vy*vy);
+        let vIn = Math.sqrt(vx*vx + vy*vy);
         let vAngle = Math.atan2(vy, vx);
         
         switch (paddleZone) {
@@ -87,19 +87,20 @@ const collidePaddleBall = (paddle:any, ball:any) => {
                 console.log("LR")
                 if (vAngle > 3.14/2)
                     vAngle = (3.14 - vAngle)
-                else
-                    vAngle -= (3.14/3);
+                //else
+                //    vAngle -= (3.14/3);
                 break;
             case Zone.LongLeft:
                 console.log("LL")
                 if (vAngle < 3.14/2)
                     vAngle = (3.14 - vAngle)
-                else
-                    vAngle += (3.14/3);
+                //else
+                //    vAngle += (3.14/3);
                 break;
             case Zone.ShortRight:
             case Zone.ShortLeft:
                 console.log("short")
+                break;
                 if (vAngle > 3.14/2)
                     vAngle -= (vAngle-3.14/2) / 4;
                 else
@@ -111,18 +112,19 @@ const collidePaddleBall = (paddle:any, ball:any) => {
             vAngle = Math.min(vAngle, 3.14);
         }
 
+        vIn += paddleBoost;
         if (vIn < vMin)
-        {
-            // minimum viable boost
-            vx = vMin * Math.cos(vAngle);
-            vy = vMin * Math.sin(vAngle);
-        }
+            vIn = vMin;
+
+        vx = vIn * Math.cos(vAngle);
+        vy = vIn * Math.sin(vAngle);
+        /*
         else
-        {
+        {    
             vx += paddleBoost * Math.cos(vAngle);
             vy += paddleBoost * Math.sin(vAngle);
         }
-
+        */
         ball.setVelocityY(vy);
         ball.setVelocityX(vx);
         /*
