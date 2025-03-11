@@ -8,7 +8,7 @@ const gameHeight = 768;
 
 const backgroundColor = 0x000000;
 const wallColor = 0x888888;
-const wallWidth = 25;
+const wallWidth = 30;
 
 const inBallX = 100;
 const inBallY = 200;
@@ -19,7 +19,7 @@ const ballColor = 0x886644;
 const ballGravity = 1400;
 const maxBallV = 2000;
 const ballDrag = 0.50;
-const ballResetV = 10;
+const ballResetV = 8;
 
 const inPaddleX = 400;
 const inPaddleY = 710;
@@ -42,6 +42,16 @@ const bumper3X = gameWidth - bumper1X;
 const bumperY = 350;
 const bumperBoost = 2.6;
 
+const brickWidth = 28;
+const brickHeight = 24;
+const brickColor = 0xd0b4d1;
+const firstBrickR1X = 105;
+const firstBrickR2X = 113;
+const brickYR1 = 95;
+const brickYR2 = 123;
+const brickSpacing = 4;
+const nBricks = 14;
+
 const holeWidth = 150;
 const dropDelay = 1500; // in ms
 
@@ -57,6 +67,10 @@ enum Zone {
     ShortLeft,
     ShortRight,
     LongRight,
+}
+
+const collideBallBrick = (ball:any, brick:any) => {
+    brick.destroy();
 }
 
 const collidePaddleBall = (paddle:any, ball:any) => {
@@ -158,7 +172,7 @@ export class BrickGame extends Scene
     bumper1: Phaser.Types.Physics.Arcade.SpriteWithStaticBody;
     bumper2: Phaser.Types.Physics.Arcade.SpriteWithStaticBody;
     bumper3: Phaser.Types.Physics.Arcade.SpriteWithStaticBody;
-    
+
     constructor ()
     {
         super('BrickGame');
@@ -194,6 +208,11 @@ export class BrickGame extends Scene
         if (!wallVTex)
             throw new Error("texture creation error");
         wallVTex.fill(wallColor);
+
+        const brickTex = this.textures.addDynamicTexture('brick', brickWidth, brickHeight);
+        if (!brickTex)
+            throw new Error("texture creation error");
+        brickTex.fill(brickColor);
 
         const walls = this.physics.add.staticGroup();
         let wall:Phaser.GameObjects.Image;
@@ -234,12 +253,11 @@ export class BrickGame extends Scene
         ballTex.draw(ballGraphics);
 
         this.paddle = this.physics.add.sprite(inPaddleX, inPaddleY, 'paddle');
+
         this.ball = this.physics.add.sprite(inBallX, inBallY, 'ball');
         //this.ball.setCollideWorldBounds(true);
         this.ball.setBounce(1);
         this.ball.setCircle(ballRadius, 0, 0);
-
-        this.physics.add.overlap(this.paddle, this.ball, collidePaddleBall);
 
         this.ball.body.setAllowDrag(true);
         this.ball.body.setDamping(true);
@@ -247,6 +265,7 @@ export class BrickGame extends Scene
         if (ballGravity)
             this.ball.body.setGravityY(ballGravity);
 
+        this.physics.add.overlap(this.paddle, this.ball, collidePaddleBall);
         this.physics.add.collider(this.ball, walls);
 
         this.paddle.setBounce(paddleBounce);
@@ -271,6 +290,19 @@ export class BrickGame extends Scene
         this.bumper3.setCircle(bumperRadius, 0, 0);
         this.physics.add.collider(this.ball, bumpers, collideBumperBall);
 
+        const bricks = this.physics.add.staticGroup();
+    
+
+        for (let i = 0 ; i < nBricks ; i++)
+        {
+            let brick;
+            brick = this.physics.add.staticSprite(firstBrickR1X + (brickWidth + brickSpacing) * i, brickYR1, 'brick');
+            bricks.add(brick);
+            brick = this.physics.add.staticSprite(firstBrickR2X + (brickWidth + brickSpacing) * i, brickYR2, 'brick');
+            bricks.add(brick);
+        }
+        this.physics.add.collider(this.ball, bricks, collideBallBrick);
+
         this.initBall();
 
         EventBus.emit('current-scene-ready', this);
@@ -283,7 +315,7 @@ export class BrickGame extends Scene
         const v = Math.sqrt (vx*vx + vy*vy)
 
         if ( (v < ballResetV) &&
-              (gameHeight - this.ball.y) < 100)  
+              (gameHeight - this.ball.y) < 70)  
         {
             // stuck?
             this.initBall();
