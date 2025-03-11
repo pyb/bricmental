@@ -26,8 +26,8 @@ const paddleDrag = 0.0002;
 const maxBallVx = 750;
 const maxPaddleVx = 2000;
 const paddleBounce = 0.34;
-const ballDrag = 0.76;
-const paddleBoost = 20;
+const ballDrag = 0.88;
+const paddleBoost = 200;
 
 const paddleRotation:number = 10.0/360;
 
