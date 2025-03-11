@@ -19,6 +19,7 @@ const ballColor = 0x886644;
 const ballGravity = 1400;
 const maxBallV = 2000;
 const ballDrag = 0.50;
+const ballResetV = 10;
 
 const inPaddleX = 400;
 const inPaddleY = 710;
@@ -35,15 +36,14 @@ const paddleVMin = 300;
 
 const bumperRadius = 18;
 const bumperColor = 0x884a94;
-const bumperX = 450;
-const bumperY = 250;
+const bumperX = 150;
+const bumperY = 350;
 const bumperBoost = 2.6;
-
 
 const holeWidth = 150;
 const dropDelay = 1500; // in ms
 
-const collideBumperBall = (bumer:any, ball:any) => {
+const collideBumperBall = (ball:any, bumper:any) => {
     const vx = ball.body.velocity.x;
     const vy = ball.body.velocity.y;
     ball.setVelocityX(vx * bumperBoost);
@@ -153,7 +153,8 @@ export class BrickGame extends Scene
     ball: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
     paddle: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
     dropTimer:Phaser.Time.TimerEvent | null;
-    bumper: Phaser.Types.Physics.Arcade.SpriteWithStaticBody;
+    bumper1: Phaser.Types.Physics.Arcade.SpriteWithStaticBody;
+    bumper2: Phaser.Types.Physics.Arcade.SpriteWithStaticBody;
 
     constructor ()
     {
@@ -255,9 +256,14 @@ export class BrickGame extends Scene
 
         this.cursors = this.input.keyboard?.createCursorKeys() as Phaser.Types.Input.Keyboard.CursorKeys;
 
-        this.bumper = this.physics.add.staticSprite(bumperX, bumperY, 'bumper');
-        this.bumper.setCircle(bumperRadius, 0, 0);
-        this.physics.add.collider(this.bumper, this.ball, collideBumperBall);
+        const bumpers = this.physics.add.staticGroup();
+        this.bumper1 = this.physics.add.staticSprite(bumperX, bumperY, 'bumper');
+        bumpers.add(this.bumper1);
+        this.bumper2 = this.physics.add.staticSprite(gameWidth - bumperX, bumperY, 'bumper');
+        bumpers.add(this.bumper2);
+        this.bumper1.setCircle(bumperRadius, 0, 0);
+        this.bumper2.setCircle(bumperRadius, 0, 0);
+        this.physics.add.collider(this.ball, bumpers, collideBumperBall);
 
         this.initBall();
 
@@ -270,7 +276,7 @@ export class BrickGame extends Scene
         let vy = this.ball.body.velocity.y;
         const v = Math.sqrt (vx*vx + vy*vy)
 
-        if ( (v < 1) &&
+        if ( (v < ballResetV) &&
               (gameHeight - this.ball.y) < 100)  
         {
             // stuck?
