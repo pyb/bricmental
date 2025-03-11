@@ -28,7 +28,12 @@ const paddleBounce = 0.34;
 
 const collidePaddleBall = (paddle:any, ball:any) => {
     if (Math.abs(ball.y - paddle.y) > (ballRadius + paddleHeight/2) - 1) {
+        console.log("top")
         // top or bottom collision
+        if (ball.y > paddle.y)
+            ball.y = paddle.y + (ballRadius + paddleHeight/2) + 1;
+        else
+            ball.y = paddle.y - (ballRadius + paddleHeight/2) - 1;
         const vy = ball.body.velocity.y;
         ball.setVelocityY(-vy);
         if (ball.x > paddle.x + ballRadius)
@@ -41,18 +46,19 @@ const collidePaddleBall = (paddle:any, ball:any) => {
     }
     else {
         //side collision
+        console.log("side")
         const ballVx = ball.body.velocity.x;
         const paddleVx = paddle.body.velocity.x;
         if (Math.sign(ballVx) == Math.sign(paddleVx))
         {
-            let vx = ballVx + paddleVx;
+            let vx = -(ballVx + paddleVx);
             vx = Math.min(vx, maxBallVx);
             vx = Math.max(vx, -maxBallVx);
             ball.setVelocityX(vx);
         }
         else
         {
-            let vx = -ballVx + paddleVx;
+            let vx = -ballVx;
             vx = Math.min(vx, maxBallVx);
             vx = Math.max(vx, -maxBallVx);
             ball.setVelocityX(vx);
