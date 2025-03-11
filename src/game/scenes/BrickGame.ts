@@ -12,7 +12,7 @@ const wallColor = 0x888888;
 const wallWidth = 20;
 const ballRadius = 13;
 const ballColor = 0x886644;
-const ballGravity = 200;
+const ballGravity = 70;
 
 const inPaddleX = 400;
 const inPaddleY = 630;
@@ -26,10 +26,11 @@ const paddleDrag = 0.0002;
 const maxBallVx = 750;
 const maxPaddleVx = 2000;
 const paddleBounce = 0.34;
-const ballDrag = 0.88;
-const paddleBoost = 200;
+const ballDrag = 0.94;
+const paddleBoost = 300;
+const paddleRandomAngleFactor = 8;
 
-const paddleRotation:number = 10.0/360;
+const vMin = 1000;
 
 const collidePaddleBall = (paddle:any, ball:any) => {
     if (Math.abs(ball.y - paddle.y) > (ballRadius + paddleHeight/2) - 1) {
@@ -44,9 +45,20 @@ const collidePaddleBall = (paddle:any, ball:any) => {
         
         
         vy = -vy;
-        const vAngle = Math.atan2(vy, vx);
-        vx += paddleBoost * Math.cos(vAngle);
-        vy += paddleBoost * Math.sin(vAngle);
+        const vIn = Math.sqrt(vx*vx + vy*vy);
+        let vAngle = Math.atan2(vy, vx);
+        vAngle += Math.random()/paddleRandomAngleFactor;
+        if (vIn < vMin)
+        {
+            // minimum viable boost
+            vx = vMin * Math.cos(vAngle);
+            vy = vMin * Math.sin(vAngle);
+        }
+        else
+        {
+            vx += paddleBoost * Math.cos(vAngle);
+            vy += paddleBoost * Math.sin(vAngle);
+        }
 
         ball.setVelocityY(vy);
 
