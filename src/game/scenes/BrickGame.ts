@@ -35,7 +35,7 @@ const collidePaddleBall = (paddle:any, ball:any) => {
             ball.y = paddle.y - (ballRadius + paddleHeight/2) - 1;
         const vy = ball.body.velocity.y;
         ball.setVelocityY(-vy);
-        if (ball.x > paddle.x + ballRadius)
+        if (ball.x > paddle.x + paddleWidth/2 + ballRadius)
             ball.setVelocityX(Math.abs(ball.body.velocity.x));
         else if (ball.x < paddle.x - ballRadius)
             ball.setVelocityX(-Math.abs(ball.body.velocity.x));
