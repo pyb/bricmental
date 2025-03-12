@@ -27,7 +27,11 @@ const maxBallVx = 750;
 const maxPaddleVx = 2000;
 const paddleBounce = 0.34;
 
-const nGames = 2;
+const nGames = 3;
+
+const G3areaRadius = 45;
+const G3areaColor = 0x00ff00;
+const G3areaOpacity = 0.2;
 
 const collidePaddleBall = (paddle:any, ball:any) => {
     if (Math.abs(ball.y - paddle.y) > (ballRadius + paddleHeight/2) - 1) {
@@ -99,6 +103,7 @@ export class BrickGame extends Scene
         this.paddles = [];
     }
 
+    // simplest game : paddle, ball
     initGame0()
     {
         const paddle = this.physics.add.sprite(inPaddleX, inPaddle1Y, 'paddle');
@@ -114,10 +119,9 @@ export class BrickGame extends Scene
 
         ball.setVelocityX(inBallVX);
         ball.setVelocityY(inBallVY);
-
-        this.setupPaddles();
     }
 
+    // 2 paddles : top and bottom
     initGame1()
     {
         const paddle1 = this.physics.add.sprite(inPaddleX, inPaddle1Y, 'paddle');
@@ -135,14 +139,26 @@ export class BrickGame extends Scene
 
         ball.setVelocityX(inBallVX);
         ball.setVelocityY(inBallVY);
+    }
 
-        this.setupPaddles();
+    // bonus / malus area in the middle
+    initGame2()
+    {
+        const areaGraphics = this.make.graphics({}, false);
+        areaGraphics.fillStyle(G3areaColor, G3areaOpacity);
+        areaGraphics.fillCircle(G3areaRadius, G3areaRadius, G3areaRadius);
+
+        const areaTex = this.textures.addDynamicTexture('area', G3areaRadius*2, G3areaRadius*2);
+        if (!areaTex)
+            throw new Error("texture creation error");
+        areaTex.draw(areaGraphics);
+
+        const area = this.make.image({x:gameWidth/2, y:gameHeight/2 , key:'area'});
+        this.initGame1();
     }
 
     initGame()
     {
-        console.log("init")
-        console.log(this.gameId)
         switch (this.gameId) {
             case 0:
                 this.initGame0();
@@ -150,21 +166,16 @@ export class BrickGame extends Scene
             case 1:
                 this.initGame1();
                 break;
+            case 2:
+                this.initGame2();
+                break;
             default:
                 console.log("Game not present") 
         }
     }
 
-    create ()
+    createTextures()
     {
-        if (!this.gameId)
-            this.gameId = 0;
-        
-        this.camera = this.cameras.main;
-        this.camera.setBackgroundColor(backgroundColor);
-
-        this.physics.world.setBounds(wallWidth, wallWidth, gameWidth - 2 * wallWidth, gameHeight - 2 * wallWidth);
-
         this.textures.remove("wallH");
         this.textures.remove("wallV");
         this.textures.remove("paddle");
@@ -179,17 +190,6 @@ export class BrickGame extends Scene
         if (!wallVTex)
             throw new Error("texture creation error");
         wallVTex.fill(wallColor);
-
-        const walls = this.physics.add.staticGroup();
-        let wall:Phaser.GameObjects.Image;
-        wall = this.make.image({x:0, y:0, key:'wallH', origin: {x:0,y:0}});
-        walls.add(wall);
-        wall = this.make.image({x:0, y: (gameHeight - 1 * wallWidth), key:'wallH', origin: {x:0,y:0}});
-        walls.add(wall);
-        wall = this.make.image({x:0, y: wallWidth, key:'wallV', origin: {x:0,y:0}});
-        walls.add(wall);
-        wall = this.make.image({x:(gameWidth - wallWidth), y:wallWidth, key:'wallV', origin: {x:0,y:0}});
-        walls.add(wall);
 
         const paddleTex = this.textures.addDynamicTexture('paddle', paddleWidth, paddleHeight);
         if (!paddleTex)
@@ -210,10 +210,35 @@ export class BrickGame extends Scene
         ballGraphics.fillStyle(ballColor, 1); // alpha == 1
         ballGraphics.fillCircle(ballRadius, ballRadius, ballRadius);
         ballTex.draw(ballGraphics);
+    }
+
+    create ()
+    {
+        if (!this.gameId)
+            this.gameId = nGames-1;
+
+        this.camera = this.cameras.main;
+        this.camera.setBackgroundColor(backgroundColor);
+
+        this.createTextures();
+
+        this.physics.world.setBounds(wallWidth, wallWidth, gameWidth - 2 * wallWidth, gameHeight - 2 * wallWidth);
+        
+        const walls = this.physics.add.staticGroup();
+        let wall:Phaser.GameObjects.Image;
+        wall = this.make.image({x:0, y:0, key:'wallH', origin: {x:0,y:0}});
+        walls.add(wall);
+        wall = this.make.image({x:0, y: (gameHeight - 1 * wallWidth), key:'wallH', origin: {x:0,y:0}});
+        walls.add(wall);
+        wall = this.make.image({x:0, y: wallWidth, key:'wallV', origin: {x:0,y:0}});
+        walls.add(wall);
+        wall = this.make.image({x:(gameWidth - wallWidth), y:wallWidth, key:'wallV', origin: {x:0,y:0}});
+        walls.add(wall);
 
         this.cursors = this.input.keyboard?.createCursorKeys() as Phaser.Types.Input.Keyboard.CursorKeys;
         
         this.initGame();
+        this.setupPaddles();
        
         EventBus.emit('current-scene-ready', this);
         this.events.once("shutdown", () => {
@@ -248,6 +273,10 @@ export class BrickGame extends Scene
         this.paddles[1].body.x = gameWidth - this.paddles[0].body.x - paddleWidth;
     }
 
+    updateGame2()
+    {
+        this.updateGame1();
+    }
     update ()
     {
         //console.log(this.game.loop.actualFps)
@@ -260,14 +289,12 @@ export class BrickGame extends Scene
             case 1:
                 this.updateGame1();
                 break;
+            case 2:
+                this.updateGame2();
+                break;
             default:
                 console.log("Game not present") 
         }
-    }
-
-    stop ()
-    {
-        console.log("stop")
     }
     
     changeScene ()
