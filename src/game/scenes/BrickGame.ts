@@ -351,9 +351,11 @@ export class BrickGame extends Scene
     {
         //this.updateGame1();
         this.updateGame0();
+        console.log(this.paddles[0].body.x)
         this.paddles[1].body.x = gameWidth - this.paddles[0].body.x - paddleWidth;
-        this.paddles[2].body.y = this.paddles[0].body.x + paddleWidth;
-        this.paddles[3].body.y = gameHeight - this.paddles[2].body.y + paddleWidth;
+        this.paddles[2].body.y = Math.floor(this.paddles[0].body.x *
+                                            (gameHeight - paddleWidth - wallWidth) / (gameWidth - paddleWidth - wallWidth));
+        this.paddles[3].body.y = gameHeight - this.paddles[2].body.y - paddleWidth;
 
         const v = this.paddles[0].body.velocity.x;
         this.paddles[1].setVelocityX(-v);
