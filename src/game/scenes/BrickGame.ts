@@ -13,18 +13,23 @@ const wallWidth = 20;
 const ballRadius = 13;
 const ballColor = 0x886644;
 
-const inPaddleX = 400;
-const inPaddleY = 630;
-const inBallX = 100;
-const inBallY = 200;
-const inBallVX = 600;
-const inBallVY = 470;
+const inBall1VX = 600;
+const inBall1VY = 470;
+const inBall1X = 100;
+const inBall1Y = 200;
+
+const inBall2VX = -700;
+const inBall2VY = 360;
+const inBall2X = 600;
+const inBall2Y = 200;
 
 const paddleAccel = 4000;
 const paddleDrag = 0.0002;
 const maxBallVx = 750;
 const maxPaddleVx = 2000;
 const paddleBounce = 0.34;
+const inPaddleX = 400;
+const inPaddleY = 630;
 
 const collidePaddleBall = (paddle:any, ball:any) => {
     if (Math.abs(ball.y - paddle.y) > (ballRadius + paddleHeight/2) - 1) {
@@ -65,13 +70,22 @@ const collidePaddleBall = (paddle:any, ball:any) => {
     } 
 };
 
+const prepBall = (ball:Phaser.Types.Physics.Arcade.SpriteWithDynamicBody, vx:number, vy:number) => {
+    ball.setCollideWorldBounds(true);
+    ball.setBounce(1);
+    ball.setCircle(ballRadius, 0, 0);
+    ball.setVelocityX(vx);
+    ball.setVelocityY(vy);
+}
+
 export class BrickGame extends Scene
 {
     camera: Phaser.Cameras.Scene2D.Camera;
     background: Phaser.GameObjects.Image;
     gameText: Phaser.GameObjects.Text;
     cursors: Phaser.Types.Input.Keyboard.CursorKeys;
-    ball: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
+    ball1: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
+    ball2: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
     paddle: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
 
     constructor ()
@@ -122,15 +136,16 @@ export class BrickGame extends Scene
         ballTex.draw(ballGraphics);
 
         this.paddle = this.physics.add.sprite(inPaddleX, inPaddleY, 'paddle');
-        this.ball = this.physics.add.sprite(inBallX, inBallY, 'ball');
-        this.ball.setCollideWorldBounds(true);
-        this.ball.setBounce(1);
-        this.ball.setCircle(ballRadius, 0, 0);
 
-        this.physics.add.overlap(this.paddle, this.ball, collidePaddleBall);
+        this.ball1 = this.physics.add.sprite(inBall1X, inBall1Y, 'ball');
+        prepBall(this.ball1, inBall1VX, inBall1VY);
+        this.physics.add.overlap(this.paddle, this.ball1, collidePaddleBall);
 
-        this.ball.setVelocityX(inBallVX);
-        this.ball.setVelocityY(inBallVY);
+        this.ball2 = this.physics.add.sprite(inBall2X, inBall2Y, 'ball');
+        prepBall(this.ball2, inBall2VX, inBall2VY);
+        this.physics.add.overlap(this.paddle, this.ball2, collidePaddleBall);
+
+        this.physics.add.collider(this.ball1, this.ball2);
 
         //paddle.setPushable(false);
         this.paddle.setBounce(paddleBounce);
