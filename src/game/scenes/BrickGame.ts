@@ -13,9 +13,13 @@ const wallWidth = 20;
 const ballRadius = 13;
 const ballColor = 0x886644;
 
+const paddleWallDistance = 100;
 const inPaddleX = 400;
-const inPaddle1Y = 680;
-const inPaddle2Y = 100;
+const inPaddle2Y = paddleWallDistance;
+const inPaddle1Y = (gameHeight - inPaddle2Y);; 
+const inPaddle3X = paddleWallDistance;
+const inPaddle4X = (gameWidth - inPaddle3X);
+
 const inBallX = 100;
 const inBallY = 200;
 const inBallVX = 510;
@@ -27,50 +31,81 @@ const maxBallVx = 750;
 const maxPaddleVx = 2000;
 const paddleBounce = 0.34;
 
-const nGames = 3;
+const nGames = 4;
 
 const G3areaRadius = 45;
 const G3areaColor = 0x00ff00;
 const G3areaOpacity = 0.2;
 
-const collidePaddleBall = (paddle:any, ball:any) => {
-    if (Math.abs(ball.y - paddle.y) > (ballRadius + paddleHeight/2) - 1) {
+// 0 is horizontal, 1 is vertical
+const collidePaddleBall = (paddle:any, ball:any, dir:number) => {
+    let vx = ball.body.velocity.x;
+    let vy = ball.body.velocity.y;
+    let bx = ball.x;
+    let by = ball.y;
+    let px = paddle.x;
+    let py = paddle.y;
+
+    let paddleVX = paddle.body.velocity.x;
+    let paddleVY = paddle.body.velocity.y;
+
+    if (dir == 1) {
+        let p;
+        p = vx;
+        vx = vy;
+        vy = p;
+
+        p = bx;
+        bx = by;
+        by = p;
+
+        p = px;
+        px = py;
+        py = p;
+
+        p = paddleVX;
+        paddleVX = paddleVY;
+        paddleVY = p;
+    }
+
+    if (Math.abs(by - py) > (ballRadius + paddleHeight/2) - 1) {
         // top or bottom collision
-        if (ball.y > paddle.y)
-            ball.y = paddle.y + (ballRadius + paddleHeight/2) + 1;
+        if (bx > py)
+            by = py + (ballRadius + paddleHeight/2) + 1;
         else
-            ball.y = paddle.y - (ballRadius + paddleHeight/2) - 1;
-        const vy = ball.body.velocity.y;
-        ball.setVelocityY(-vy);
-        if (ball.x > paddle.x + paddleWidth/2 + ballRadius)
-            ball.setVelocityX(Math.abs(ball.body.velocity.x));
-        else if (ball.x < paddle.x - ballRadius)
-            ball.setVelocityX(-Math.abs(ball.body.velocity.x));
+            by = py - (ballRadius + paddleHeight/2) - 1;
+        
+        if (bx > px + paddleWidth/2 + ballRadius)
+            vx = Math.abs(vx);
+        else if (bx < px - ballRadius)
+            vx = -Math.abs(vx);
         else {
             // near the middle of the paddle. no velocity change
         }
+        vy = -vy;
     }
     else {
         //side collision
-        const ballVx = ball.body.velocity.x;
-        const paddleVx = paddle.body.velocity.x;
-        if (Math.sign(ballVx) == Math.sign(paddleVx))
+        const ballVx = vx;
+        if (Math.sign(ballVx) == Math.sign(paddleVX))
         {
-            let vx = -(ballVx + paddleVx);
+            vx = -(vx + paddleVX);
             vx = Math.min(vx, maxBallVx);
             vx = Math.max(vx, -maxBallVx);
-            ball.setVelocityX(vx);
         }
         else
         {
-            let vx = -ballVx;
+            vx = -vx;
             vx = Math.min(vx, maxBallVx);
             vx = Math.max(vx, -maxBallVx);
-            ball.setVelocityX(vx);
         }
-            
-    } 
+    }
+    ball.setVelocityX(dir == 0 ? vx : vy);
+    ball.setVelocityY(dir == 0 ? vy : vx);
 };
+
+const collideHPaddleBall = (paddle:any, ball:any) => collidePaddleBall(paddle, ball, 0);
+const collideVPaddleBall = (paddle:any, ball:any) => collidePaddleBall(paddle, ball, 1);
 
 export class BrickGame extends Scene
 {
@@ -78,8 +113,8 @@ export class BrickGame extends Scene
     cursors: Phaser.Types.Input.Keyboard.CursorKeys;
     balls: Array<Phaser.Types.Physics.Arcade.SpriteWithDynamicBody>;
     paddles: Array<Phaser.Types.Physics.Arcade.SpriteWithDynamicBody>;
-    ballTex: Phaser.Textures.DynamicTexture;
-    paddleTex: Phaser.Textures.DynamicTexture;
+    //ballTex: Phaser.Textures.DynamicTexture;
+    //paddleTex: Phaser.Textures.DynamicTexture;
     gameId: number;
 
     constructor ()
@@ -115,7 +150,7 @@ export class BrickGame extends Scene
         ball.setCircle(ballRadius, 0, 0);
         this.balls = [ball];
 
-        this.physics.add.overlap(paddle, ball, collidePaddleBall);
+        this.physics.add.overlap(paddle, ball, collideHPaddleBall);
 
         ball.setVelocityX(inBallVX);
         ball.setVelocityY(inBallVY);
@@ -125,8 +160,9 @@ export class BrickGame extends Scene
     initGame1()
     {
         const paddle1 = this.physics.add.sprite(inPaddleX, inPaddle1Y, 'paddle');
-        const paddle2 = this.physics.add.sprite(inPaddleX, inPaddle2Y, 'paddle');
-        this.paddles = [paddle1, paddle2];
+        const paddle2 = this.physics.add.sprite(inPaddleX, (gameHeight - inPaddle1Y), 'paddle');
+        this.paddles.push(paddle1);
+        this.paddles.push(paddle2);
 
         const ball = this.physics.add.sprite(inBallX, inBallY, 'ball');
         ball.setCollideWorldBounds(true);
@@ -134,8 +170,9 @@ export class BrickGame extends Scene
         ball.setCircle(ballRadius, 0, 0);
         this.balls = [ball];
 
-        this.physics.add.overlap(paddle1, ball, collidePaddleBall);
-        this.physics.add.overlap(paddle2, ball, collidePaddleBall);
+        for (const paddle of this.paddles) {
+            this.physics.add.overlap(paddle, ball, collideHPaddleBall);
+        }
 
         ball.setVelocityX(inBallVX);
         ball.setVelocityY(inBallVY);
@@ -157,6 +194,29 @@ export class BrickGame extends Scene
         this.initGame1();
     }
 
+    initGame3()
+    {
+        const paddle0 = this.physics.add.sprite(inPaddleX, inPaddle1Y, 'paddle');
+        const paddle1 = this.physics.add.sprite(inPaddleX, inPaddle2Y, 'paddle');
+        const paddle2 = this.physics.add.sprite(inPaddle3X, inPaddle2Y, 'paddleV');
+        const paddle3 = this.physics.add.sprite(inPaddle4X, inPaddle2Y, 'paddleV');
+        this.paddles = [paddle0, paddle1, paddle2, paddle3, paddle0];
+
+        const ball = this.physics.add.sprite(inBallX, inBallY, 'ball');
+        ball.setCollideWorldBounds(true);
+        ball.setBounce(1);
+        ball.setCircle(ballRadius, 0, 0);
+        this.balls = [ball];
+
+        this.physics.add.overlap(paddle0, ball, collideHPaddleBall);
+        this.physics.add.overlap(paddle1, ball, collideHPaddleBall);
+        this.physics.add.overlap(paddle2, ball, collideVPaddleBall);
+        this.physics.add.overlap(paddle3, ball, collideVPaddleBall);
+       
+        ball.setVelocityX(inBallVX);
+        ball.setVelocityY(inBallVY);
+    }
+
     initGame()
     {
         switch (this.gameId) {
@@ -169,6 +229,9 @@ export class BrickGame extends Scene
             case 2:
                 this.initGame2();
                 break;
+            case 3:
+                this.initGame3();
+                break;
             default:
                 console.log("Game not present") 
         }
@@ -179,6 +242,7 @@ export class BrickGame extends Scene
         this.textures.remove("wallH");
         this.textures.remove("wallV");
         this.textures.remove("paddle");
+        this.textures.remove("paddleV");
         this.textures.remove("ball");
 
         const wallHTex = this.textures.addDynamicTexture('wallH', gameWidth, wallWidth);
@@ -197,14 +261,23 @@ export class BrickGame extends Scene
         else
         {
             paddleTex.fill(paddleColor);
-            this.paddleTex = paddleTex;
+            //this.paddleTex = paddleTex;
+        }
+
+        const paddleTexV = this.textures.addDynamicTexture('paddleV', paddleHeight, paddleWidth);
+        if (!paddleTexV)
+            throw new Error("texture creation error");
+        else
+        {
+            paddleTexV.fill(paddleColor);
+            //this.paddleTex = paddleTex;
         }
 
         const ballTex = this.textures.addDynamicTexture('ball', ballRadius*2, ballRadius*2);
         if (!ballTex)
             throw new Error("texture creation error");
-        else
-            this.ballTex = ballTex;
+        //else
+        //    this.ballTex = ballTex;
 
         const ballGraphics = this.make.graphics({}, false);
         ballGraphics.fillStyle(ballColor, 1); // alpha == 1
@@ -214,7 +287,7 @@ export class BrickGame extends Scene
 
     create ()
     {
-        if (!this.gameId)
+        if (this.gameId == undefined)
             this.gameId = nGames-1;
 
         this.camera = this.cameras.main;
@@ -248,23 +321,20 @@ export class BrickGame extends Scene
 
     updateGame0()
     {
-        if (this.cursors.left.isDown)
-            {
-                //this.paddle.setVelocityX(-400);
-                this.paddles[0].setAccelerationX(-paddleAccel);
-                //this.paddle2.setAccelerationX(-paddleAccel);
-            }
-            else if (this.cursors.right.isDown)
-            {
-                //this.paddle.setVelocityX(400);
-                this.paddles[0].setAccelerationX(paddleAccel);
-                //this.paddle2.setAccelerationX(paddleAccel);
-            }
-            else
-            {
-                //this.paddle.setVelocityX(0);
-                this.paddles[0].setAccelerationX(0);
-            }      
+        if (this.cursors.left.isDown || this.cursors.down.isDown) {
+            //this.paddle.setVelocityX(-400);
+            this.paddles[0].setAccelerationX(-paddleAccel);
+            //this.paddle2.setAccelerationX(-paddleAccel);
+        }
+        else if (this.cursors.right.isDown || this.cursors.up.isDown) {
+            //this.paddle.setVelocityX(400);
+            this.paddles[0].setAccelerationX(paddleAccel);
+            //this.paddle2.setAccelerationX(paddleAccel);
+        }
+        else {
+            //this.paddle.setVelocityX(0);
+            this.paddles[0].setAccelerationX(0);
+        }      
     }
 
     updateGame1()
@@ -277,6 +347,20 @@ export class BrickGame extends Scene
     {
         this.updateGame1();
     }
+    updateGame3()
+    {
+        //this.updateGame1();
+        this.updateGame0();
+        this.paddles[1].body.x = gameWidth - this.paddles[0].body.x - paddleWidth;
+        this.paddles[2].body.y = this.paddles[0].body.x + paddleWidth;
+        this.paddles[3].body.y = gameHeight - this.paddles[2].body.y + paddleWidth;
+
+        const v = this.paddles[0].body.velocity.x;
+        this.paddles[1].setVelocityX(-v);
+        this.paddles[2].setVelocityY(v);
+        this.paddles[3].setVelocityY(-v);
+    }
+
     update ()
     {
         //console.log(this.game.loop.actualFps)
@@ -292,6 +376,9 @@ export class BrickGame extends Scene
             case 2:
                 this.updateGame2();
                 break;
+            case 3:
+                this.updateGame3();
+                break;
             default:
                 console.log("Game not present") 
         }
@@ -300,6 +387,7 @@ export class BrickGame extends Scene
     changeScene ()
     {
         this.gameId = (this.gameId + 1) % nGames;
+        console.log(this.gameId);
         this.scene.restart();
     }
 }
