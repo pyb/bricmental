@@ -24,6 +24,20 @@ function App()
         }
     }
 
+
+    const changeGame = () => {
+
+        if(phaserRef.current)
+        {     
+            const scene = phaserRef.current.scene as MainMenu;
+            
+            if (scene)
+            {
+                scene.changeScene();
+            }
+        }
+    }
+
     const moveSprite = () => {
 
         if(phaserRef.current)
@@ -84,6 +98,9 @@ function App()
         <div id="app">
             <PhaserGame ref={phaserRef} currentActiveScene={currentScene} />
             <div>
+                <div>
+                    <button className="button" onClick={changeGame}>Change Game</button>
+                </div>
                 {/*
                 <div>
                     <button className="button" onClick={changeScene}>Change Scene</button>

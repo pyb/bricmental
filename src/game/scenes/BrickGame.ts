@@ -14,10 +14,11 @@ const ballRadius = 13;
 const ballColor = 0x886644;
 
 const inPaddleX = 400;
-const inPaddleY = 630;
+const inPaddle1Y = 680;
+const inPaddle2Y = 100;
 const inBallX = 100;
 const inBallY = 200;
-const inBallVX = 600;
+const inBallVX = 510;
 const inBallVY = 470;
 
 const paddleAccel = 4000;
@@ -25,6 +26,8 @@ const paddleDrag = 0.0002;
 const maxBallVx = 750;
 const maxPaddleVx = 2000;
 const paddleBounce = 0.34;
+
+const nGames = 2;
 
 const collidePaddleBall = (paddle:any, ball:any) => {
     if (Math.abs(ball.y - paddle.y) > (ballRadius + paddleHeight/2) - 1) {
@@ -68,23 +71,104 @@ const collidePaddleBall = (paddle:any, ball:any) => {
 export class BrickGame extends Scene
 {
     camera: Phaser.Cameras.Scene2D.Camera;
-    background: Phaser.GameObjects.Image;
-    gameText: Phaser.GameObjects.Text;
     cursors: Phaser.Types.Input.Keyboard.CursorKeys;
-    ball: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
-    paddle: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
+    balls: Array<Phaser.Types.Physics.Arcade.SpriteWithDynamicBody>;
+    paddles: Array<Phaser.Types.Physics.Arcade.SpriteWithDynamicBody>;
+    ballTex: Phaser.Textures.DynamicTexture;
+    paddleTex: Phaser.Textures.DynamicTexture;
+    gameId: number;
 
     constructor ()
     {
         super('BrickGame');
     }
 
+    setupPaddles () {
+        for (const paddle of this.paddles) {
+            paddle.setBounce(paddleBounce);
+            paddle.setCollideWorldBounds(true);
+            paddle.body.setMaxSpeed(maxPaddleVx);
+            paddle.body.setAllowDrag(true);
+            paddle.body.setDamping(true);
+            paddle.body.setDrag(paddleDrag, 0);
+        }
+    }
+
+    reset () {
+        this.balls = [];
+        this.paddles = [];
+    }
+
+    initGame0()
+    {
+        const paddle = this.physics.add.sprite(inPaddleX, inPaddle1Y, 'paddle');
+        this.paddles = [paddle];
+
+        const ball = this.physics.add.sprite(inBallX, inBallY, 'ball');
+        ball.setCollideWorldBounds(true);
+        ball.setBounce(1);
+        ball.setCircle(ballRadius, 0, 0);
+        this.balls = [ball];
+
+        this.physics.add.overlap(paddle, ball, collidePaddleBall);
+
+        ball.setVelocityX(inBallVX);
+        ball.setVelocityY(inBallVY);
+
+        this.setupPaddles();
+    }
+
+    initGame1()
+    {
+        const paddle1 = this.physics.add.sprite(inPaddleX, inPaddle1Y, 'paddle');
+        const paddle2 = this.physics.add.sprite(inPaddleX, inPaddle2Y, 'paddle');
+        this.paddles = [paddle1, paddle2];
+
+        const ball = this.physics.add.sprite(inBallX, inBallY, 'ball');
+        ball.setCollideWorldBounds(true);
+        ball.setBounce(1);
+        ball.setCircle(ballRadius, 0, 0);
+        this.balls = [ball];
+
+        this.physics.add.overlap(paddle1, ball, collidePaddleBall);
+        this.physics.add.overlap(paddle2, ball, collidePaddleBall);
+
+        ball.setVelocityX(inBallVX);
+        ball.setVelocityY(inBallVY);
+
+        this.setupPaddles();
+    }
+
+    initGame()
+    {
+        console.log("init")
+        console.log(this.gameId)
+        switch (this.gameId) {
+            case 0:
+                this.initGame0();
+                break;
+            case 1:
+                this.initGame1();
+                break;
+            default:
+                console.log("Game not present") 
+        }
+    }
+
     create ()
     {
+        if (!this.gameId)
+            this.gameId = 0;
+        
         this.camera = this.cameras.main;
         this.camera.setBackgroundColor(backgroundColor);
 
         this.physics.world.setBounds(wallWidth, wallWidth, gameWidth - 2 * wallWidth, gameHeight - 2 * wallWidth);
+
+        this.textures.remove("wallH");
+        this.textures.remove("wallV");
+        this.textures.remove("paddle");
+        this.textures.remove("ball");
 
         const wallHTex = this.textures.addDynamicTexture('wallH', gameWidth, wallWidth);
         if (!wallHTex)
@@ -110,66 +194,85 @@ export class BrickGame extends Scene
         const paddleTex = this.textures.addDynamicTexture('paddle', paddleWidth, paddleHeight);
         if (!paddleTex)
             throw new Error("texture creation error");
-        paddleTex.fill(paddleColor);
-        
+        else
+        {
+            paddleTex.fill(paddleColor);
+            this.paddleTex = paddleTex;
+        }
 
         const ballTex = this.textures.addDynamicTexture('ball', ballRadius*2, ballRadius*2);
         if (!ballTex)
             throw new Error("texture creation error");
+        else
+            this.ballTex = ballTex;
+
         const ballGraphics = this.make.graphics({}, false);
         ballGraphics.fillStyle(ballColor, 1); // alpha == 1
         ballGraphics.fillCircle(ballRadius, ballRadius, ballRadius);
         ballTex.draw(ballGraphics);
 
-        this.paddle = this.physics.add.sprite(inPaddleX, inPaddleY, 'paddle');
-        this.ball = this.physics.add.sprite(inBallX, inBallY, 'ball');
-        this.ball.setCollideWorldBounds(true);
-        this.ball.setBounce(1);
-        this.ball.setCircle(ballRadius, 0, 0);
-
-        this.physics.add.overlap(this.paddle, this.ball, collidePaddleBall);
-
-        this.ball.setVelocityX(inBallVX);
-        this.ball.setVelocityY(inBallVY);
-
-        //paddle.setPushable(false);
-        this.paddle.setBounce(paddleBounce);
-        this.paddle.setCollideWorldBounds(true);
-        
-        this.paddle.body.setMaxSpeed(maxPaddleVx);
-        this.paddle.body.setAllowDrag(true);
-        this.paddle.body.setDamping(true);
-        this.paddle.body.setDrag(paddleDrag, 0);
-
         this.cursors = this.input.keyboard?.createCursorKeys() as Phaser.Types.Input.Keyboard.CursorKeys;
-
+        
+        this.initGame();
+       
         EventBus.emit('current-scene-ready', this);
+        this.events.once("shutdown", () => {
+            this.reset();
+          });
+    }
+
+    updateGame0()
+    {
+        if (this.cursors.left.isDown)
+            {
+                //this.paddle.setVelocityX(-400);
+                this.paddles[0].setAccelerationX(-paddleAccel);
+                //this.paddle2.setAccelerationX(-paddleAccel);
+            }
+            else if (this.cursors.right.isDown)
+            {
+                //this.paddle.setVelocityX(400);
+                this.paddles[0].setAccelerationX(paddleAccel);
+                //this.paddle2.setAccelerationX(paddleAccel);
+            }
+            else
+            {
+                //this.paddle.setVelocityX(0);
+                this.paddles[0].setAccelerationX(0);
+            }      
+    }
+
+    updateGame1()
+    {
+        this.updateGame0();
+        this.paddles[1].body.x = gameWidth - this.paddles[0].body.x - paddleWidth;
     }
 
     update ()
     {
         //console.log(this.game.loop.actualFps)
-        // tmp
-        this.cursors = this.input.keyboard?.createCursorKeys() as Phaser.Types.Input.Keyboard.CursorKeys;
+        //this.cursors = this.input.keyboard?.createCursorKeys() as Phaser.Types.Input.Keyboard.CursorKeys;
 
-        if (this.cursors.left.isDown)
-            {
-                //this.paddle.setVelocityX(-400);
-                this.paddle.setAccelerationX(-paddleAccel);
-            }
-            else if (this.cursors.right.isDown)
-            {
-                //this.paddle.setVelocityX(400);
-                this.paddle.setAccelerationX(paddleAccel);
-            }
-            else
-            {
-                //this.paddle.setVelocityX(0);
-                this.paddle.setAccelerationX(0);
-            }
+        switch (this.gameId) {
+            case 0:
+                this.updateGame0();
+                break;
+            case 1:
+                this.updateGame1();
+                break;
+            default:
+                console.log("Game not present") 
+        }
     }
+
+    stop ()
+    {
+        console.log("stop")
+    }
+    
     changeScene ()
     {
-        this.scene.start('MainMenu');
+        this.gameId = (this.gameId + 1) % nGames;
+        this.scene.restart();
     }
 }
