@@ -288,7 +288,8 @@ export class BrickGame extends Scene
     create ()
     {
         if (this.gameId == undefined)
-            this.gameId = nGames-1;
+            //this.gameId = nGames-1;
+            this.gameId = 0;
 
         this.camera = this.cameras.main;
         this.camera.setBackgroundColor(backgroundColor);
