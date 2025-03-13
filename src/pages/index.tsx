@@ -11,7 +11,7 @@ export default function Home() {
     return (
         <>
             <Head>
-                <title>Bricmental</title>
+                <title>Brick Game</title>
                 <meta name="description" content="Brick game" />
                 <meta name="viewport" content="width=device-width, initial-scale=1" />
                 <link rel="icon" href="/favicon.png" />
