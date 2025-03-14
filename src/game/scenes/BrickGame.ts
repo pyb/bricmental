@@ -7,6 +7,7 @@ const gameHeight = 768;
 const paddleWidth = 100;
 const paddleHeight = 30;
 const paddleColor = 0xdddddd;
+const paddleBoostColor = 0xebe834;
 const backgroundColor = 0x000000;
 const wallColor = 0x888888;
 const wallWidth = 20;
@@ -30,6 +31,8 @@ const paddleDrag = 0.0002;
 const maxBallVx = 750;
 const maxPaddleVx = 2000;
 const paddleBounce = 0.34;
+const paddleVMin = 20;
+const paddleBoostAngle = 15*3.14/180; //(15 degrees)
 
 const nGames = 4;
 
@@ -38,7 +41,8 @@ const G3areaColor = 0x00ff00;
 const G3areaOpacity = 0.2;
 
 // 0 is horizontal, 1 is vertical
-const flatCollidePaddleBall = (paddle: any, ball: any, dir: number) => {
+// effect unused
+const flatCollidePaddleBall = (paddle: any, ball: any, dir: number, effect: number) => {
     let vx = ball.body.velocity.x;
     let vy = ball.body.velocity.y;
     let bx = ball.x;
@@ -102,6 +106,80 @@ const flatCollidePaddleBall = (paddle: any, ball: any, dir: number) => {
     ball.setVelocityY(dir == 0 ? vy : vx);
 };
 
+const effectCollidePaddleBall = (paddle: any, ball: any, dir: number, effect: number) => {
+    // dir unused
+
+    let vx = ball.body.velocity.x;
+    let vy = ball.body.velocity.y;
+    let bx = ball.x;
+    let by = ball.y;
+    let px = paddle.x;
+    let py = paddle.y;
+
+    let paddleVX = paddle.body.velocity.x;
+    let paddleVY = paddle.body.velocity.y;
+
+    if (Math.abs(by - py) > (ballRadius + paddleHeight / 2 - 1) ) {
+        // top or bottom collision
+        vy = -vy;
+        if (bx > px + paddleWidth / 2 + ballRadius)
+            vx = Math.abs(vx);
+        else if (bx < px - ballRadius)
+            vx = -Math.abs(vx);
+
+        let vIn = Math.sqrt(vx*vx + vy*vy);
+        let vAngle = Math.atan2(-vy, vx); // -vy because y is negative up
+        if (effect == 1)
+        {
+            if (vAngle > 3.1415/2)
+            {
+                vAngle -= paddleBoostAngle;
+                vAngle = Math.max(vAngle, Math.PI/2);
+            }
+            else
+            {
+                vAngle += paddleBoostAngle;
+                vAngle = Math.min(vAngle, Math.PI/2);
+            }   
+        }
+        if (effect == -1)
+            {
+                if (vAngle > 3.14/2)
+                {
+                    vAngle += paddleBoostAngle;
+                    vAngle = Math.min(vAngle, Math.PI);
+                }
+                else
+                {
+                    vAngle -= paddleBoostAngle;
+                    vAngle = Math.max(vAngle, 0);
+                }   
+            }
+            
+        vx = vIn * Math.cos(vAngle);
+        vy = -vIn * Math.sin(vAngle);
+    }
+    else
+    {
+        //side collision
+        const ballVx = vx;
+        if (Math.sign(ballVx) == Math.sign(paddleVX)) {
+            vx = -(vx + paddleVX);
+            vx = Math.min(vx, maxBallVx);
+            vx = Math.max(vx, -maxBallVx);
+        }
+        else {
+            vx = -vx;
+            vx = Math.min(vx, maxBallVx);
+            vx = Math.max(vx, -maxBallVx);
+        }
+    }
+
+    ball.setVelocityX(vx);
+    ball.setVelocityY(vy);
+    
+};
+
 export class BrickGame extends Scene {
     camera: Phaser.Cameras.Scene2D.Camera;
     cursors: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -111,12 +189,13 @@ export class BrickGame extends Scene {
     ballTex: Phaser.Textures.DynamicTexture;
     paddleHTex: Phaser.Textures.DynamicTexture;
     paddleVTex: Phaser.Textures.DynamicTexture;
+    paddleHBoostTex: Phaser.Textures.DynamicTexture;
     wallHTex: Phaser.Textures.DynamicTexture;
     wallVTex: Phaser.Textures.DynamicTexture;
 
     gameId: number;
     paddleBoost: number; // -1 to defocus/increase angle, 0 neutral, 1 to focus/decrease angle
-    collidePaddleBall: (paddle: any, ball: any, type: number) => void;
+    collidePaddleBall: (paddle: any, ball: any, dir: number, effect: number) => void;
     collideHPaddleBall: (paddle: any, ball: any) => void;
     collideVPaddleBall: (paddle: any, ball: any) => void;
 
@@ -142,9 +221,10 @@ export class BrickGame extends Scene {
 
     // simplest game : paddle, ball
     initGame0() {
-        const paddle = this.physics.add.sprite(inPaddleX, inPaddle1Y, 'paddle');
+        const paddle = this.physics.add.sprite(inPaddleX, inPaddle1Y, 'paddle', 0);
+        //paddle.setFrame(0);
         this.paddles = [paddle];
-
+        
         const ball = this.physics.add.sprite(inBallX, inBallY, 'ball');
         ball.setCollideWorldBounds(true);
         ball.setBounce(1);
@@ -253,16 +333,6 @@ export class BrickGame extends Scene {
             this.wallVTex.fill(wallColor);
         }
 
-        if (!this.paddleHTex) {
-            const paddleHTex = this.textures.addDynamicTexture('paddle', paddleWidth, paddleHeight);
-            if (!paddleHTex)
-                throw new Error("texture creation error");
-            else {
-                paddleHTex.fill(paddleColor);
-            }
-            this.paddleHTex = paddleHTex;
-        }
-
         if (!this.paddleVTex) {
             const paddleVTex = this.textures.addDynamicTexture('paddleV', paddleHeight, paddleWidth);
             if (!paddleVTex)
@@ -284,6 +354,19 @@ export class BrickGame extends Scene {
 
             ballTex.draw(ballGraphics);
             this.ballTex = ballTex;
+        }
+
+        if (!this.paddleHTex) {
+            const paddleHTex = this.textures.addDynamicTexture('paddle', paddleWidth * 2, paddleHeight);
+            if (!paddleHTex)
+                throw new Error("texture creation error");
+            paddleHTex.fill(paddleColor, 1, 0, 0, paddleWidth, paddleHeight);
+            paddleHTex.fill(paddleBoostColor, 1, paddleWidth, 0, paddleWidth, paddleHeight);
+
+            const sourceIndex = 0; // what is this?
+            paddleHTex.add(0, sourceIndex, 0, 0, paddleWidth, paddleHeight);
+            paddleHTex.add(1, sourceIndex, paddleWidth, 0, paddleWidth, paddleHeight);
+            this.paddleHTex = paddleHTex;
         }
     }
 
@@ -312,15 +395,15 @@ export class BrickGame extends Scene {
 
         this.cursors = this.input.keyboard?.createCursorKeys() as Phaser.Types.Input.Keyboard.CursorKeys;
 
-        this.collidePaddleBall = flatCollidePaddleBall;
-
-        this.collideHPaddleBall = (paddle: any, ball: any) => this.collidePaddleBall(paddle, ball, 0);
-        this.collideVPaddleBall = (paddle: any, ball: any) => this.collidePaddleBall(paddle, ball, 1);
+        this.paddleBoost = 0;
+        //this.collidePaddleBall = flatCollidePaddleBall;
+        this.collidePaddleBall = effectCollidePaddleBall;
+        this.collideHPaddleBall = (paddle: any, ball: any) => this.collidePaddleBall(paddle, ball, 0, this.paddleBoost);
+        this.collideVPaddleBall = (paddle: any, ball: any) => this.collidePaddleBall(paddle, ball, 1, this.paddleBoost);
 
         this.initGame();
         this.setupPaddles();
 
-        
         EventBus.emit('current-scene-ready', this);
         this.events.once("shutdown", () => {
             this.reset();
@@ -328,7 +411,7 @@ export class BrickGame extends Scene {
     }
 
     updateGame0() {
-        if (this.cursors.up.isDown) {
+        if (this.cursors.up.isDown || this.cursors.space.isDown) {
             this.paddleBoost = 1;
         }
         else if (this.cursors.down.isDown) {
@@ -344,10 +427,14 @@ export class BrickGame extends Scene {
         else if (this.cursors.right.isDown) {
             this.paddles[0].setAccelerationX(paddleAccel);
         }
-     
         else {
             this.paddles[0].setAccelerationX(0);  
         }
+
+        if (this.paddleBoost == 0)
+            this.paddles[0].setFrame(0);
+        else
+            this.paddles[0].setFrame(1);
     }
 
     updateGame1() {
