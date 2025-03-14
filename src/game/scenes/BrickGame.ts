@@ -244,6 +244,7 @@ export class BrickGame extends Scene
         this.textures.remove("paddle");
         this.textures.remove("paddleV");
         this.textures.remove("ball");
+        this.textures.remove("area");
 
         const wallHTex = this.textures.addDynamicTexture('wallH', gameWidth, wallWidth);
         if (!wallHTex)
@@ -390,7 +391,6 @@ export class BrickGame extends Scene
     changeScene ()
     {
         this.gameId = (this.gameId + 1) % nGames;
-        console.log(this.gameId);
         this.scene.restart();
     }
 }
